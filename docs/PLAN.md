@@ -77,7 +77,7 @@ Checklist
 - [ ] Propose a normalized schema for users, boards, columns, and cards.
 - [ ] Save schema as JSON in docs/ (include sample data).
 - [ ] Document database approach and migration strategy.
-- [ ] Get user sign-off before implementation.
+- [x] Get user sign-off before implementation.
 
 Tests
 - [ ] JSON schema file validates (basic structure and required fields).

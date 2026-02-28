@@ -1,17 +1,106 @@
 from pathlib import Path
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+
+from .db import init_db
+from .repository import (
+  BoardNotFoundError,
+  CardNotFoundError,
+  ColumnNotFoundError,
+  create_card,
+  delete_card,
+  fetch_board,
+  move_card,
+  rename_column,
+  update_card,
+)
+from .schemas import (
+  Board,
+  CreateCardRequest,
+  MoveCardRequest,
+  RenameColumnRequest,
+  UpdateCardRequest,
+)
 
 app = FastAPI()
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
+@app.on_event("startup")
+def startup() -> None:
+  init_db()
+
+
 @app.get("/api/health")
 def read_health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+@app.get("/api/board", response_model=Board)
+def read_board() -> Board:
+  try:
+    board = fetch_board()
+  except BoardNotFoundError as exc:
+    raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+  return Board(
+    columns=[
+      {"id": column.id, "title": column.title, "cardIds": column.card_ids}
+      for column in board.columns
+    ],
+    cards={
+      card_id: {"id": card.id, "title": card.title, "details": card.details}
+      for card_id, card in board.cards.items()
+    },
+  )
+
+
+@app.post("/api/columns/{column_id}/rename")
+def rename_board_column(column_id: str, payload: RenameColumnRequest) -> dict[str, str]:
+  try:
+    rename_column(column_id, payload.title)
+  except ColumnNotFoundError as exc:
+    raise HTTPException(status_code=404, detail=str(exc)) from exc
+  return {"status": "ok"}
+
+
+@app.post("/api/cards")
+def create_board_card(payload: CreateCardRequest) -> dict[str, str]:
+  try:
+    card = create_card(payload.columnId, payload.title, payload.details)
+  except ColumnNotFoundError as exc:
+    raise HTTPException(status_code=404, detail=str(exc)) from exc
+  return {"id": card.id, "title": card.title, "details": card.details}
+
+
+@app.patch("/api/cards/{card_id}")
+def update_board_card(card_id: str, payload: UpdateCardRequest) -> dict[str, str]:
+  try:
+    card = update_card(card_id, payload.title, payload.details)
+  except CardNotFoundError as exc:
+    raise HTTPException(status_code=404, detail=str(exc)) from exc
+  return {"id": card.id, "title": card.title, "details": card.details}
+
+
+@app.delete("/api/cards/{card_id}")
+def delete_board_card(card_id: str) -> dict[str, str]:
+  try:
+    delete_card(card_id)
+  except CardNotFoundError as exc:
+    raise HTTPException(status_code=404, detail=str(exc)) from exc
+  return {"status": "ok"}
+
+
+@app.post("/api/cards/{card_id}/move")
+def move_board_card(card_id: str, payload: MoveCardRequest) -> dict[str, str]:
+  try:
+    move_card(card_id, payload.toColumnId, payload.position)
+  except (CardNotFoundError, ColumnNotFoundError) as exc:
+    raise HTTPException(status_code=404, detail=str(exc)) from exc
+  return {"status": "ok"}
 
 
 if STATIC_DIR.exists():
