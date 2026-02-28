@@ -1,37 +1,165 @@
-# High level steps for project
+# Project plan
 
-Part 1: Plan
+This plan breaks work into numbered parts with clear checklists, tests, and success criteria. Each part should be completed and verified before moving on.
 
-Enrich this document to plan out each of these parts in detail, with substeps listed out as a checklist to be checked off by the agent, and with tests and success critieria for each. Also create an AGENTS.md file inside the frontend directory that describes the existing code there. Ensure the user checks and approves the plan.
+## Part 1: Plan
 
-Part 2: Scaffolding
+Checklist
+- [ ] Expand this plan with concrete steps, tests, and success criteria for each part.
+- [ ] Create frontend/AGENTS.md describing the existing frontend codebase (no code changes).
+- [ ] Confirm plan scope and sequencing with the user before proceeding.
+- [ ] Target ~80% unit test coverage when it is sensible; prioritize valuable tests over hitting a numeric threshold.
+- [ ] Require robust integration testing for backend routes and frontend-to-backend flows.
 
-Set up the Docker infrastructure, the backend in backend/ with FastAPI, and write the start and stop scripts in the scripts/ directory. This should serve example static HTML to confirm that a 'hello world' example works running locally and also make an API call.
+Tests
+- Documentation-only; no runtime tests.
 
-Part 3: Add in Frontend
+Success criteria
+- [ ] Plan is explicit and actionable.
+- [ ] frontend/AGENTS.md exists and accurately reflects the frontend implementation.
+- [ ] User approves the plan.
 
-Now update so that the frontend is statically built and served, so that the app has the demo Kanban board displayed at /. Comprehensive unit and integration tests.
+## Part 2: Scaffolding
 
-Part 4: Add in a fake user sign in experience
+Checklist
+- [ ] Add Docker infrastructure to run backend and serve static content.
+- [ ] Create FastAPI app in backend/ with a simple root HTML page and a JSON health endpoint.
+- [ ] Configure Python deps using uv inside Docker.
+- [ ] Add start/stop scripts for Mac, Windows, Linux in scripts/.
+- [ ] Ensure a local run path works without Docker for faster iteration.
 
-Now update so that on first hitting /, you need to log in with dummy credentials ("user", "password") in order to see the Kanban, and you can log out. Comprehensive tests.
+Tests
+- [ ] `GET /` returns hello world HTML.
+- [ ] `GET /api/health` returns JSON with status.
+- [ ] Start/stop scripts run without errors on their target OS.
 
-Part 5: Database modeling
+Success criteria
+- [ ] Docker build and run succeeds.
+- [ ] Backend responds to HTML and API requests.
+- [ ] Scripts reliably start and stop the server.
 
-Now propose a database schema for the Kanban, saving it as JSON. Document the database approach in docs/ and get user sign off.
+## Part 3: Add frontend
 
-Part 6: Backend
+Checklist
+- [ ] Build the Next app for static output.
+- [ ] Serve the built frontend from FastAPI at `/`.
+- [ ] Ensure asset paths work under the same origin.
+- [ ] Preserve existing UI look and behavior.
 
-Now add API routes to allow the backend to read and change the Kanban for a given user; test this thoroughly with backend unit tests. The database should be created if it doesn't exist.
+Tests
+- [ ] Frontend unit tests (`npm run test:unit`) with sensible coverage targets focused on value.
+- [ ] Frontend e2e tests (`npm run test:e2e`).
+- [ ] Manual smoke: `/` renders the Kanban board in Docker.
 
-Part 7: Frontend + Backend
+Success criteria
+- [ ] Kanban board UI is served at `/` via the backend.
+- [ ] Unit and e2e tests pass.
 
-Now have the frontend actually use the backend API, so that the app is a proper persistent Kanban board. Test very throughly.
+## Part 4: Fake user sign-in
 
-Part 8: AI connectivity
+Checklist
+- [ ] Add a simple login screen that gates access to the board.
+- [ ] Accept only `user` / `password` and provide logout.
+- [ ] Persist login state across refresh (cookie or local storage).
+- [ ] Add backend endpoint to validate login if needed.
 
-Now allow the backend to make an AI call via OpenRouter. Test connectivity with a simple "2+2" test and ensure the AI call is working.
+Tests
+- [ ] Unit tests for login logic and UI gating with sensible coverage targets focused on value.
+- [ ] E2e tests for login/logout flow.
 
-Part 9: Now extend the backend call so that it always calls the AI with the JSON of the Kanban board, plus the user's question (and conversation history). The AI should respond with Structured Outputs that includes the response to the user and optionaly an update to the Kanban. Test thoroughly.
+Success criteria
+- [ ] Unauthenticated users see only the login screen.
+- [ ] Authenticated users see the Kanban board until logout.
 
-Part 10: Now add a beautiful sidebar widget to the UI supporting full AI chat, and allowing the LLM (as it determines) to update the Kanban based on its Structured Outputs. If the AI updates the Kanban, then the UI should refresh automatically.
+## Part 5: Database modeling
+
+Checklist
+- [ ] Propose a normalized schema for users, boards, columns, and cards.
+- [ ] Save schema as JSON in docs/ (include sample data).
+- [ ] Document database approach and migration strategy.
+- [ ] Get user sign-off before implementation.
+
+Tests
+- [ ] JSON schema file validates (basic structure and required fields).
+
+Success criteria
+- [ ] Schema is clear and approved.
+- [ ] Docs explain how data is stored and related.
+
+## Part 6: Backend
+
+Checklist
+- [ ] Implement SQLite data access and initialize DB if missing.
+- [ ] Add API routes for board read/update, column rename, card CRUD, card move.
+- [ ] Add request/response validation.
+- [ ] Provide deterministic seed data for the single user.
+
+Tests
+- [ ] Backend unit tests for each route and data operation with sensible coverage targets focused on value.
+- [ ] DB creation on first run is verified.
+
+Success criteria
+- [ ] API supports full Kanban CRUD for the user.
+- [ ] Tests confirm data persistence and correct ordering.
+
+## Part 7: Frontend + backend
+
+Checklist
+- [ ] Replace in-memory board state with API-backed state.
+- [ ] Add optimistic UI updates with rollback on failure.
+- [ ] Handle loading and error states.
+- [ ] Ensure board refreshes after backend updates.
+
+Tests
+- [ ] Integration tests for API calls and UI sync (robust coverage of success and failure cases).
+- [ ] E2e tests for core flows (move, add, rename, delete).
+
+Success criteria
+- [ ] Kanban changes persist across refresh.
+- [ ] UI stays in sync with backend state.
+
+## Part 8: AI connectivity
+
+Checklist
+- [ ] Add OpenRouter client using env key.
+- [ ] Create a backend endpoint to run a simple prompt.
+- [ ] Add minimal logging for request/response timing.
+
+Tests
+- [ ] Backend unit test for a basic `2+2` prompt with sensible coverage targets focused on value.
+- [ ] Verify correct model configuration.
+
+Success criteria
+- [ ] AI call succeeds and returns expected content.
+
+## Part 9: AI structured outputs
+
+Checklist
+- [ ] Define JSON schema for AI responses (message + optional board ops).
+- [ ] Send board JSON plus conversation history to the model.
+- [ ] Validate and apply board updates returned by the model.
+- [ ] Log structured output validation failures.
+
+Tests
+- [ ] Unit tests for schema validation with sensible coverage targets focused on value.
+- [ ] Integration tests for applying AI-driven updates (success and validation-failure paths).
+
+Success criteria
+- [ ] AI responses are parsed reliably.
+- [ ] Board updates are applied safely and deterministically.
+
+## Part 10: AI sidebar
+
+Checklist
+- [ ] Add a sidebar chat UI with history.
+- [ ] Send user messages to the backend AI endpoint.
+- [ ] Apply AI-driven board updates and refresh UI.
+- [ ] Handle streaming or loading states gracefully.
+
+Tests
+- [ ] UI tests for chat message flow and board updates with sensible coverage targets focused on value.
+- [ ] E2e test covering chat-driven card change.
+
+Success criteria
+- [ ] Sidebar chat works end-to-end.
+- [ ] Board updates appear immediately after AI response.
