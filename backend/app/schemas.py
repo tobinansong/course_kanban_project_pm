@@ -38,3 +38,12 @@ class UpdateCardRequest(BaseModel):
 class MoveCardRequest(BaseModel):
     toColumnId: str
     position: int = Field(ge=0)
+
+
+class AiPromptRequest(BaseModel):
+    prompt: str
+
+
+class AiPromptResponse(BaseModel):
+    content: str
+    model: str

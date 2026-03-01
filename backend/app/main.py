@@ -1,9 +1,16 @@
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from dotenv import load_dotenv
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
+from .ai import (
+  OpenRouterConfigError,
+  OpenRouterRequestError,
+  OpenRouterResponseError,
+  run_prompt,
+)
 from .db import init_db
 from .repository import (
   BoardNotFoundError,
@@ -17,12 +24,16 @@ from .repository import (
   update_card,
 )
 from .schemas import (
+  AiPromptRequest,
+  AiPromptResponse,
   Board,
   CreateCardRequest,
   MoveCardRequest,
   RenameColumnRequest,
   UpdateCardRequest,
 )
+
+load_dotenv()
 
 app = FastAPI()
 
@@ -101,6 +112,17 @@ def move_board_card(card_id: str, payload: MoveCardRequest) -> dict[str, str]:
   except (CardNotFoundError, ColumnNotFoundError) as exc:
     raise HTTPException(status_code=404, detail=str(exc)) from exc
   return {"status": "ok"}
+
+
+@app.post("/api/ai/prompt", response_model=AiPromptResponse)
+def run_ai_prompt(payload: AiPromptRequest) -> AiPromptResponse:
+  try:
+    content, model = run_prompt(payload.prompt)
+  except OpenRouterConfigError as exc:
+    raise HTTPException(status_code=400, detail=str(exc)) from exc
+  except (OpenRouterRequestError, OpenRouterResponseError) as exc:
+    raise HTTPException(status_code=502, detail=str(exc)) from exc
+  return AiPromptResponse(content=content, model=model)
 
 
 if STATIC_DIR.exists():

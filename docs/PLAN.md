@@ -121,13 +121,12 @@ Success criteria
 ## Part 8: AI connectivity
 
 Checklist
-- [ ] Add OpenRouter client using env key.
-- [ ] Create a backend endpoint to run a simple prompt.
-- [ ] Add minimal logging for request/response timing.
+- [ ] Add backend client that calls OpenRouter with model openai/gpt-oss-120b:free.
+- [ ] Read OPENROUTER_API_KEY from .env.
+- [ ] Implement a simple test endpoint to verify AI connectivity.
 
 Tests
-- [ ] Backend unit test for a basic `2+2` prompt with sensible coverage targets focused on value.
-- [ ] Verify correct model configuration.
+- [ ] Unit test that mocks OpenRouter responses.
 
 Success criteria
 - [ ] AI call succeeds and returns expected content.
