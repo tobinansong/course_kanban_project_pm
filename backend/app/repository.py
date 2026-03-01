@@ -186,8 +186,8 @@ def move_card(card_id: str, to_column_id: str, position: int) -> None:
         to_cards = _fetch_column_cards(conn, to_column_id)
         next_to_cards = _insert_at(to_cards, card_id, position)
         conn.execute(
-            "UPDATE cards SET column_id = ?, updated_at = ? WHERE id = ?",
-            (to_column_id, now_iso(), card_id),
+            "UPDATE cards SET column_id = ?, position = ?, updated_at = ? WHERE id = ?",
+            (to_column_id, len(to_cards), now_iso(), card_id),
         )
         _reindex_column(conn, from_column_id, from_cards)
         _reindex_column(conn, to_column_id, next_to_cards)
@@ -216,6 +216,12 @@ def _reindex_column(conn, column_id: str, card_ids: List[str] | None = None) -> 
     if card_ids is None:
         card_ids = _fetch_column_cards(conn, column_id)
     timestamp = now_iso()
+    offset = 1_000_000
+    for index, card_id in enumerate(card_ids):
+        conn.execute(
+            "UPDATE cards SET position = ?, updated_at = ? WHERE id = ?",
+            (index + offset, timestamp, card_id),
+        )
     for index, card_id in enumerate(card_ids):
         conn.execute(
             "UPDATE cards SET position = ?, updated_at = ? WHERE id = ?",

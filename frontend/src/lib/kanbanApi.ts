@@ -4,6 +4,56 @@ type ApiError = {
   detail?: string;
 };
 
+export type AiChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+export type AiRenameColumnOperation = {
+  type: "rename_column";
+  columnId: string;
+  title: string;
+};
+
+export type AiCreateCardOperation = {
+  type: "create_card";
+  columnId: string;
+  title: string;
+  details?: string | null;
+};
+
+export type AiUpdateCardOperation = {
+  type: "update_card";
+  cardId: string;
+  title?: string | null;
+  details?: string | null;
+};
+
+export type AiMoveCardOperation = {
+  type: "move_card";
+  cardId: string;
+  toColumnId: string;
+  position: number;
+};
+
+export type AiDeleteCardOperation = {
+  type: "delete_card";
+  cardId: string;
+};
+
+export type AiBoardOperation =
+  | AiRenameColumnOperation
+  | AiCreateCardOperation
+  | AiUpdateCardOperation
+  | AiMoveCardOperation
+  | AiDeleteCardOperation;
+
+export type AiStructuredResponse = {
+  message: string;
+  operations: AiBoardOperation[];
+  model: string;
+};
+
 const jsonRequest = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const response = await fetch(path, {
     headers: {
@@ -81,4 +131,13 @@ export const moveCard = async (
   jsonRequest<{ status: string }>(`/api/cards/${cardId}/move`, {
     method: "POST",
     body: JSON.stringify({ toColumnId, position }),
+  });
+
+export const sendStructuredChat = async (
+  message: string,
+  history: AiChatMessage[]
+): Promise<AiStructuredResponse> =>
+  jsonRequest<AiStructuredResponse>("/api/ai/structured", {
+    method: "POST",
+    body: JSON.stringify({ message, history }),
   });

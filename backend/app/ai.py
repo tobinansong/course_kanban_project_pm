@@ -4,9 +4,11 @@ import json
 import logging
 import os
 import time
+from pathlib import Path
 from typing import Any
 
 import httpx
+from dotenv import load_dotenv
 from pydantic import ValidationError
 
 from .schemas import AiChatMessage, AiStructuredOutput
@@ -16,6 +18,9 @@ logger = logging.getLogger("pm.ai")
 DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "openai/gpt-oss-120b:free"
 DEFAULT_APP_NAME = "pm-kanban"
+
+ENV_PATH = Path(__file__).resolve().parents[2] / ".env"
+load_dotenv(dotenv_path=ENV_PATH)
 
 STRUCTURED_SYSTEM_PROMPT = (
     "You are an assistant for a kanban board."
@@ -84,6 +89,17 @@ def run_messages(messages: list[dict[str, str]]) -> tuple[str, str]:
     try:
         response = _post_openrouter(base_url, payload, headers)
         response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        status_code = exc.response.status_code
+        body = _safe_response_text(exc.response)
+        logger.warning(
+            "OpenRouter request failed status=%s body=%s",
+            status_code,
+            body,
+        )
+        raise OpenRouterRequestError(
+            f"OpenRouter request failed ({status_code})"
+        ) from exc
     except httpx.HTTPError as exc:
         raise OpenRouterRequestError("OpenRouter request failed") from exc
     finally:
@@ -115,6 +131,14 @@ def _extract_content(data: dict[str, Any]) -> str:
         raise OpenRouterResponseError("OpenRouter response missing content")
 
     return content.strip()
+
+
+def _safe_response_text(response: httpx.Response) -> str:
+    try:
+        text = response.text
+    except Exception:
+        return "<unavailable>"
+    return text.strip()[:1000]
 
 
 def parse_structured_response(content: str) -> AiStructuredOutput:

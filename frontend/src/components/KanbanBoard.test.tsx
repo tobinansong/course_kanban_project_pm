@@ -1,18 +1,40 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { KanbanBoard } from "@/components/KanbanBoard";
+import { initialData } from "@/lib/kanban";
+import * as kanbanApi from "@/lib/kanbanApi";
 
-const getFirstColumn = () => screen.getAllByTestId(/column-/i)[0];
+vi.mock("@/lib/kanbanApi", () => ({
+  getBoard: vi.fn(),
+  renameColumn: vi.fn().mockResolvedValue({ status: "ok" }),
+  createCard: vi.fn().mockImplementation((columnId: string, title: string, details: string) =>
+    Promise.resolve({ id: "card-new", title, details })
+  ),
+  deleteCard: vi.fn().mockResolvedValue({ status: "ok" }),
+  moveCard: vi.fn().mockResolvedValue({ status: "ok" }),
+  sendStructuredChat: vi.fn().mockResolvedValue({
+    message: "All set",
+    operations: [],
+    model: "openai/gpt-oss-120b:free",
+  }),
+}));
+
+beforeEach(() => {
+  vi.mocked(kanbanApi.getBoard).mockResolvedValue(initialData);
+});
+
+const getFirstColumn = async () => (await screen.findAllByTestId(/column-/i))[0];
 
 describe("KanbanBoard", () => {
-  it("renders five columns", () => {
+  it("renders five columns", async () => {
     render(<KanbanBoard />);
-    expect(screen.getAllByTestId(/column-/i)).toHaveLength(5);
+    const columns = await screen.findAllByTestId(/column-/i);
+    expect(columns).toHaveLength(5);
   });
 
   it("renames a column", async () => {
     render(<KanbanBoard />);
-    const column = getFirstColumn();
+    const column = await getFirstColumn();
     const input = within(column).getByLabelText("Column title");
     await userEvent.clear(input);
     await userEvent.type(input, "New Name");
@@ -21,7 +43,7 @@ describe("KanbanBoard", () => {
 
   it("adds and removes a card", async () => {
     render(<KanbanBoard />);
-    const column = getFirstColumn();
+    const column = await getFirstColumn();
     const addButton = within(column).getByRole("button", {
       name: /add a card/i,
     });
@@ -34,7 +56,7 @@ describe("KanbanBoard", () => {
 
     await userEvent.click(within(column).getByRole("button", { name: /add card/i }));
 
-    expect(within(column).getByText("New card")).toBeInTheDocument();
+    expect(await within(column).findByText("New card")).toBeInTheDocument();
 
     const deleteButton = within(column).getByRole("button", {
       name: /delete new card/i,
