@@ -103,10 +103,11 @@ def create_card(column_id: str, title: str, details: str | None) -> CardRecord:
             raise ColumnNotFoundError("Column not found")
 
         position_row = conn.execute(
-            "SELECT COALESCE(MAX(position), -1) AS max_position FROM cards WHERE column_id = ?",
+            "SELECT MAX(position) AS max_position FROM cards WHERE column_id = ?",
             (column_id,),
         ).fetchone()
-        next_position = (position_row["max_position"] or -1) + 1
+        max_pos = position_row["max_position"]
+        next_position = (max_pos if max_pos is not None else -1) + 1
 
         conn.execute(
             "INSERT INTO cards (id, column_id, title, details, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",

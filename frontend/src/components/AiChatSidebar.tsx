@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import clsx from "clsx";
 import type { AiChatMessage } from "@/lib/kanbanApi";
 
@@ -20,6 +20,11 @@ export const AiChatSidebar = ({
   onSend,
 }: AiChatSidebarProps) => {
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -77,6 +82,7 @@ export const AiChatSidebar = ({
             </div>
           ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {error ? (

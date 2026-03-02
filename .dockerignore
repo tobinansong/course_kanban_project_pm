@@ -1,0 +1,5 @@
+.git
+frontend/node_modules
+frontend/.next
+frontend/test-results
+backend/app/data
